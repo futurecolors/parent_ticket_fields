@@ -1,0 +1,19 @@
+<h3>Manual fields</h3>
+
+By default, all these fields are <em>automatic</em> for parent issues. Which means that they
+cannot be changed directly and get updated when child issues are updated.
+Here you can override that behavior for specific fields.
+
+<table>
+  <tbody>
+      <% Issue %>
+      <% %w(priority_id done_ratio start_date due_date estimated_hours).each do |field| %>
+    <tr>
+        <th><%= field.humanize %></th>
+      <td>
+         <%= check_box_tag 'settings[%s]' % field, 1, settings[field] %>
+        </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
