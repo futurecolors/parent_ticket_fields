@@ -1,5 +1,5 @@
 require 'redmine'
-require 'issue_patch'
+require_relative 'lib/issue_patch'
 
 Redmine::Plugin.register :parent_ticket_fields do
   name 'Parent Ticket Fields plugin'
@@ -8,7 +8,7 @@ Redmine::Plugin.register :parent_ticket_fields do
     lets you configure which fields are editable (and they won't be updated when a
     child ticket changes)."
   version '0.0.1'
-  url 'https://github.com/futurecolors/redmine-parent-ticket-fields'
+  url 'https://github.com/futurecolors/parent_ticket_fields'
   author_url 'https://github.com/thesealion'
   settings :default => {}, :partial => 'parent_ticket_fields/settings'
 end
