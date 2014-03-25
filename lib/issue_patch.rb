@@ -5,6 +5,7 @@ Issue.class_eval do
     true
   end
   def fake_safe_attributes=(attrs, user=User.current)
+    return unless attrs.is_a?(Hash)
     # Making safe_attributes setter think the current issue is a leaf (has no
     # subtasks), even if it isn't, so the setter doesn't reject any fields.
     Issue.class_eval do
