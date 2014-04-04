@@ -7,7 +7,7 @@ Redmine::Plugin.register :parent_ticket_fields do
   description "If a ticket has subtickets, you can't edit certain fields. This plugin
     lets you configure which fields are editable (and they won't be updated when a
     child ticket changes)."
-  version '0.0.1'
+  version '0.0.2'
   url 'https://github.com/futurecolors/parent_ticket_fields'
   author_url 'https://github.com/thesealion'
   settings :default => {}, :partial => 'parent_ticket_fields/settings'

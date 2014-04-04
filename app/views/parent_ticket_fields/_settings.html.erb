@@ -6,14 +6,34 @@ Here you can override that behavior for specific fields.
 
 <table>
   <tbody>
-      <% Issue %>
-      <% %w(priority_id done_ratio start_date due_date estimated_hours).each do |field| %>
-    <tr>
+    <% %w(priority_id done_ratio start_date due_date estimated_hours).each do |field| %>
+      <tr>
         <th><%= field.humanize %></th>
-      <td>
-         <%= check_box_tag 'settings[%s]' % field, 1, settings[field] %>
+        <td>
+          <%= check_box_tag 'settings[%s]' % field, 1, settings[field] %>
         </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<hr>
+
+<h3>Spent time threshold</h3>
+
+When enabled, will forbid changing versions for tickets with spent time greater than
+the threshold.
+
+<table>
+  <tbody>
+    <tr>
+      <th>Enable</th>
+      <td>
+        <%= check_box_tag 'settings[spent_time_threshold_enabled]', 1, settings['spent_time_threshold_enabled'] %>
+      </td>
     </tr>
-<% end %>
+    <tr>
+      <th>Threshold</th>
+      <td><input type="text" value="<%= settings['spent_time_threshold'] %>" name="settings[spent_time_threshold]">
   </tbody>
 </table>

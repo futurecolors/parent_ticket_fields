@@ -66,3 +66,31 @@ class IssueNestedSetTest < ActiveSupport::TestCase
     assert_equal Date.parse('2014-04-15'), parent.due_date
   end
 end
+
+class SpentTimeThresholdTest < ActiveSupport::TestCase
+  def test_cannot_edit_version_if_threshold_active
+    project = Project.generate!
+    version1 = Version.generate!(:project => project)
+    version2 = Version.generate!(:project => project)
+    issue = Issue.generate!(:fixed_version_id => version1.id, :project => project)
+    User.current = issue.author
+    # Threshold disabled, target version is editable.
+    issue.safe_attributes = {'fixed_version_id' => version2.id}
+    issue.save!
+    assert_equal issue.reload.fixed_version_id, version2.id
+
+    Setting.plugin_parent_ticket_fields = {'spent_time_threshold_enabled' => 1, 'spent_time_threshold' => 2.5}
+    TimeEntry.generate!(:project => project, :issue => issue, :hours => 2.1)
+    # Threshold enabled but not reached, target version is editable.
+    issue.safe_attributes = {'fixed_version_id' => version1.id}
+    issue.save!
+    assert_equal issue.reload.fixed_version_id, version1.id
+
+    # Threshold reached, target version is not editable.
+    TimeEntry.generate!(:project => project, :issue => issue, :hours => 0.5)
+    issue = Issue.find issue.id # issue.total_spent_hours method is cached, we need to flush it.
+    issue.safe_attributes = {'fixed_version_id' => version2.id}
+    issue.save!
+    assert_equal issue.reload.fixed_version_id, version1.id
+  end
+end

@@ -20,6 +20,10 @@ Issue.class_eval do
       attrs.reject! {|k,v| automatic_fields.include?(k)}
     end
 
+    if spent_time_threshold_active?
+      attrs.delete('fixed_version_id')
+    end
+
     self.send(:real_safe_attributes=, attrs, user)
     Issue.class_eval do
       alias_method :leaf?, :real_leaf?
@@ -48,4 +52,10 @@ Issue.class_eval do
   end
   alias_method :real_recalculate, :recalculate_attributes_for
   alias_method :recalculate_attributes_for, :recalculate_wrapper
+
+  def spent_time_threshold_active?
+    enabled = Setting.plugin_parent_ticket_fields['spent_time_threshold_enabled']
+    threshold = Setting.plugin_parent_ticket_fields['spent_time_threshold'].to_f
+    enabled and total_spent_hours > threshold
+  end
 end
