@@ -1,6 +1,8 @@
 require_dependency 'issue'
 
 Issue.class_eval do
+  ALL_FIELDS = %w(priority_id done_ratio start_date due_date estimated_hours)
+
   def fake_leaf?
     true
   end
@@ -15,7 +17,7 @@ Issue.class_eval do
 
     # Rejecting non-manual fields.
     manual_fields = (Setting.plugin_parent_ticket_fields || {}).keys
-    automatic_fields = %w(priority_id done_ratio start_date due_date estimated_hours) - manual_fields
+    automatic_fields = ALL_FIELDS - manual_fields
     unless real_leaf?
       attrs.reject! {|k,v| automatic_fields.include?(k)}
     end
@@ -41,7 +43,7 @@ Issue.class_eval do
     if issue_id && p = Issue.find_by_id(issue_id)
       values = {}
       # Saving manual fields values in order to restore them later.
-      (Setting.plugin_parent_ticket_fields || {}).keys.each do |field|
+      ((Setting.plugin_parent_ticket_fields || {}).keys & ALL_FIELDS).each do |field|
         values[field] = p.send(field)
       end
       real_recalculate issue_id
