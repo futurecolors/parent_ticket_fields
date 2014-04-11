@@ -34,6 +34,22 @@ the threshold.
     </tr>
     <tr>
       <th>Threshold</th>
-      <td><input type="text" value="<%= settings['spent_time_threshold'] %>" name="settings[spent_time_threshold]">
+      <td><input type="text" value="<%= settings['spent_time_threshold'] %>" name="settings[spent_time_threshold]"></td>
+    </tr>
+    <tr>
+      <th>Activities</th>
+      <td>
+        <select multiple="multiple" name="settings[activities][]">
+          <% TimeEntryActivity.all.each do |activity| %>
+              <option
+                value="<%= activity.id %>"
+                <%= if (Setting.plugin_parent_ticket_fields['activities'] || []).include? activity.id.to_s then 'selected="selected"' else '' end %>
+              >
+                  <%= activity.name %>
+              </option>
+          <% end %>
+        </select>
+      </td>
+    </tr>
   </tbody>
 </table>

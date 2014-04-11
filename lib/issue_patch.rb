@@ -16,7 +16,7 @@ Issue.class_eval do
     end
 
     # Rejecting non-manual fields.
-    manual_fields = (Setting.plugin_parent_ticket_fields || {}).keys
+    manual_fields = (settings || {}).keys
     automatic_fields = ALL_FIELDS - manual_fields
     unless real_leaf?
       attrs.reject! {|k,v| automatic_fields.include?(k)}
@@ -36,14 +36,14 @@ Issue.class_eval do
   alias_method :safe_attributes=, :fake_safe_attributes=
 
   def automatic_field?(field_name)
-    !leaf? && !Setting.plugin_parent_ticket_fields.include?(field_name)
+    !leaf? && !settings.include?(field_name)
   end
 
   def recalculate_wrapper(issue_id)
     if issue_id && p = Issue.find_by_id(issue_id)
       values = {}
       # Saving manual fields values in order to restore them later.
-      ((Setting.plugin_parent_ticket_fields || {}).keys & ALL_FIELDS).each do |field|
+      ((settings || {}).keys & ALL_FIELDS).each do |field|
         values[field] = p.send(field)
       end
       real_recalculate issue_id
@@ -56,8 +56,21 @@ Issue.class_eval do
   alias_method :recalculate_attributes_for, :recalculate_wrapper
 
   def spent_time_threshold_active?
-    enabled = Setting.plugin_parent_ticket_fields['spent_time_threshold_enabled']
-    threshold = Setting.plugin_parent_ticket_fields['spent_time_threshold'].to_f
-    enabled and total_spent_hours > threshold
+    enabled = settings['spent_time_threshold_enabled']
+    threshold = settings['spent_time_threshold'].to_f
+    spent_hours = spent_time_for_activities settings['activities']
+
+    enabled and spent_hours > threshold
+  end
+
+  def spent_time_for_activities(activities)
+    self_and_descendants.
+      joins("LEFT JOIN #{TimeEntry.table_name} ON #{TimeEntry.table_name}.issue_id = #{Issue.table_name}.id").
+      where("#{TimeEntry.table_name}.activity_id" => activities).
+      sum("#{TimeEntry.table_name}.hours").to_f
+  end
+
+  def settings
+    Setting.plugin_parent_ticket_fields
   end
 end
