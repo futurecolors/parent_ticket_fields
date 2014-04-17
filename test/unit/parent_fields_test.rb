@@ -1,6 +1,6 @@
 require File.expand_path('../../test_helper', __FILE__)
 
-class IssueNestedSetTest < ActiveSupport::TestCase
+class ParentFieldsTest < ActiveSupport::TestCase
 
   def teardown
     User.current = nil
@@ -68,36 +68,57 @@ class IssueNestedSetTest < ActiveSupport::TestCase
 end
 
 class SpentTimeThresholdTest < ActiveSupport::TestCase
+  def setup
+    @project = Project.generate!
+    @version1 = Version.generate!(:project => @project)
+    @version2 = Version.generate!(:project => @project)
+    @activity1 = TimeEntryActivity.first
+    @activity2 = TimeEntryActivity.new(:name => 'Doing nothing')
+    @activity2.save!
+    @issue = Issue.generate!(:fixed_version_id => @version1.id, :project => @project)
+    User.current = @issue.author
+  end
+
+  def teardown
+    User.current = nil
+  end
+
   def test_cannot_edit_version_if_threshold_active
-    project = Project.generate!
-    version1 = Version.generate!(:project => project)
-    version2 = Version.generate!(:project => project)
-    activity1 = TimeEntryActivity.first
-    activity2 = TimeEntryActivity.new(:name => 'Doing nothing')
-    activity2.save!
-    issue = Issue.generate!(:fixed_version_id => version1.id, :project => project)
-    User.current = issue.author
     # Threshold disabled, target version is editable.
-    issue.safe_attributes = {'fixed_version_id' => version2.id}
-    issue.save!
-    assert_equal issue.reload.fixed_version_id, version2.id
+    @issue.safe_attributes = {'fixed_version_id' => @version2.id}
+    @issue.save!
+    assert_equal @issue.reload.fixed_version_id, @version2.id
 
     Setting.plugin_parent_ticket_fields = {
         'spent_time_threshold_enabled' => 1,
         'spent_time_threshold' => 2.5,
-        'activities' => [activity1.id],
+        'activities' => [@activity1.id],
     }
-    TimeEntry.generate!(:project => project, :issue => issue, :hours => 3, :activity => activity2)
+    TimeEntry.generate!(:project => @project, :issue => @issue, :hours => 3, :activity => @activity2)
     # Threshold enabled but not reached, target version is editable.
-    issue.safe_attributes = {'fixed_version_id' => version1.id}
-    issue.save!
-    assert_equal issue.reload.fixed_version_id, version1.id
+    @issue.safe_attributes = {'fixed_version_id' => @version1.id}
+    @issue.save!
+    assert_equal @issue.reload.fixed_version_id, @version1.id
 
     # Threshold reached, target version is not editable.
-    TimeEntry.generate!(:project => project, :issue => issue, :hours => 2.6, :activity => activity1)
-    issue = Issue.find issue.id # issue.total_spent_hours method is cached, we need to flush it.
-    issue.safe_attributes = {'fixed_version_id' => version2.id}
-    issue.save!
-    assert_equal issue.reload.fixed_version_id, version1.id
+    TimeEntry.generate!(:project => @project, :issue => @issue, :hours => 2.6, :activity => @activity1)
+    @issue = Issue.find @issue.id # issue.total_spent_hours method is cached, we need to flush it.
+    @issue.safe_attributes = {'fixed_version_id' => @version2.id}
+    @issue.save!
+    assert_equal @issue.reload.fixed_version_id, @version1.id
+  end
+
+  def test_no_threshold_for_admin
+    Setting.plugin_parent_ticket_fields = {
+        'spent_time_threshold_enabled' => 1,
+        'spent_time_threshold' => 2.5,
+        'activities' => [@activity1.id],
+    }
+    User.current.admin = true
+    User.current.save!
+    TimeEntry.generate!(:project => @project, :issue => @issue, :hours => 10, :activity => @activity1)
+    @issue.safe_attributes = {'fixed_version_id' => @version2.id}
+    @issue.save!
+    assert_equal @issue.reload.fixed_version_id, @version2.id
   end
 end

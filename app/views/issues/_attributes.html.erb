@@ -29,8 +29,8 @@
 <% end %>
 
 <% if @issue.safe_attribute?('fixed_version_id') && @issue.assignable_versions.any? %>
-<p><%= f.select :fixed_version_id, version_options_for_select(@issue.assignable_versions, @issue.fixed_version), {:include_blank => true, :required => @issue.required_attribute?('fixed_version_id')}, :disabled => @issue.spent_time_threshold_active? %>
-<% if !@issue.spent_time_threshold_active? %>
+<p><%= f.select :fixed_version_id, version_options_for_select(@issue.assignable_versions, @issue.fixed_version), {:include_blank => true, :required => @issue.required_attribute?('fixed_version_id')}, :disabled => @issue.spent_time_threshold_active?(User.current) %>
+<% if !@issue.spent_time_threshold_active?(User.current) %>
 <%= link_to(image_tag('add.png', :style => 'vertical-align: middle;'),
             new_project_version_path(@issue.project),
             :remote => true,

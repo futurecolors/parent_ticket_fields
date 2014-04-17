@@ -22,7 +22,7 @@ Issue.class_eval do
       attrs.reject! {|k,v| automatic_fields.include?(k)}
     end
 
-    if spent_time_threshold_active?
+    if spent_time_threshold_active?(user)
       attrs.delete('fixed_version_id')
     end
 
@@ -55,7 +55,8 @@ Issue.class_eval do
   alias_method :real_recalculate, :recalculate_attributes_for
   alias_method :recalculate_attributes_for, :recalculate_wrapper
 
-  def spent_time_threshold_active?
+  def spent_time_threshold_active?(user)
+    return false if user.admin
     enabled = settings['spent_time_threshold_enabled']
     threshold = settings['spent_time_threshold'].to_f
     spent_hours = spent_time_for_activities settings['activities']
